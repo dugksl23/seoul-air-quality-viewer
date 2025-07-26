@@ -314,10 +314,15 @@ async function fetchDataForDateTime(dateStr, stationName, totalRequests, current
   const startIndex = 1;
   const endIndex = 1000;
 
-  let apiUrl = `http://openapi.seoul.go.kr:8088/${API_KEY}/json/${API_NAME}/${startIndex}/${endIndex}/${dateStr}`;
-  if (stationName) {
-      apiUrl += `/${encodeURIComponent(stationName)}`;
-  }
+  // let apiUrl = `http://openapi.seoul.go.kr:8088/${API_KEY}/json/${API_NAME}/${startIndex}/${endIndex}/${dateStr}`;
+  // if (stationName) {
+  //     apiUrl += `/${encodeURIComponent(stationName)}`;
+  // }
+
+  let apiUrl = `/api/${API_KEY}/json/${API_NAME}/${startIndex}/${endIndex}/${dateStr}`;
+if (stationName) {
+  apiUrl += `/${encodeURIComponent(stationName)}`;
+}
 
   console.log(`데이터를 가져오는 중: ${apiUrl}`);
   requestedDates.add(dateStr);
