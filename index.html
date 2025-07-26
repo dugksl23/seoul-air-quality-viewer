@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<title>서울시 대기오염 API 요청</title>
+<title>서울시 대기질 정보 조회</title>
 <style>
   body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f9f9f9; }
   h2 { color: #333; text-align: center; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }
@@ -12,31 +12,35 @@
   select:focus { border-color: #4CAF50; outline: none; }
   button { display: block; width: 100%; padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; margin-top: 10px; }
   button:hover { background-color: #45a049; }
-  #result { background: #f4f4f4; padding: 15px; margin-top: 20px; border-radius: 4px; overflow-x: auto; max-height: 400px; font-family: 'Courier New', Courier, monospace; color: #333; white-space: pre-wrap; }
+  #result { background: #f4f4f4; padding: 15px; margin-top: 20px; border-radius: 4px; overflow-x: auto; max-height: 400px; font-family: 'Courier New', Courier, monospace; color: #333; }
   #downloadBtn { background-color: #2196F3; }
   #downloadBtn:hover { background-color: #1976D2; }
   #progress { margin-top: 10px; color: #666; }
   #missingDates { margin-top: 10px; color: #d32f2f; font-weight: bold; }
   #errorLog { margin-top: 10px; color: #d32f2f; }
   .disabled { opacity: 0.5; pointer-events: none; }
+  .hint { font-size: 0.85em; color: #777; margin-top: 5px; display: block; }
+  #result table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  #result th, #result td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 0.9em; }
+  #result th { background-color: #e0e0e0; color: #333; font-weight: bold; position: sticky; top: 0; z-index: 1;}
+  #result tr:nth-child(even) { background-color: #f2f2f2; }
+  #result tr:hover { background-color: #e9e9e9; }
 </style>
 </head>
 <body>
 
-<h2>서울시 대기오염 API 요청 UI</h2>
+<h2>서울시 대기질 정보 조회</h2>
 
 <div class="form-group">
-  <label>년도:
-    <select id="year" onchange="updateDays()">
-      <option value="">선택하세요</option>
-      <option value="2024">2024</option>
-      <option value="2025">2025</option>
+  <label>년도 (필수 선택):
+    <select id="year" onchange="handleYearMonthChange()">
+      <option value="">년도를 선택하세요</option>
     </select>
   </label>
 
-  <label>월:
-    <select id="month" onchange="updateDays()">
-      <option value="">선택하세요</option>
+  <label>월/분기 (월 또는 분기 중 하나 필수 선택):
+    <select id="monthQuarter" onchange="handleYearMonthChange()">
+      <option value="">월 또는 분기를 선택하세요</option>
       <option value="01">1월</option>
       <option value="02">2월</option>
       <option value="03">3월</option>
@@ -49,58 +53,30 @@
       <option value="10">10월</option>
       <option value="11">11월</option>
       <option value="12">12월</option>
+      <option value="Q1">1분기 (1월-3월)</option>
+      <option value="Q2">2분기 (4월-6월)</option>
+      <option value="Q3">3분기 (7월-9월)</option>
+      <option value="Q4">4분기 (10월-12월)</option>
     </select>
   </label>
 
-  <label>분기:
-    <select id="quarter">
-      <option value="">선택하세요</option>
-      <option value="Q1">1분기 (1-3월)</option>
-      <option value="Q2">2분기 (4-6월)</option>
-      <option value="Q3">3분기 (7-9월)</option>
-      <option value="Q4">4분기 (10-12월)</option>
+  <label>일자 (선택 사항):
+    <select id="day" disabled onchange="handleDayChange()">
+      <option value="">일자를 선택하세요</option>
     </select>
+    <span class="hint">월을 선택하시면 일자를 선택할 수 있습니다.</span>
   </label>
 
-  <label>일자:
-    <select id="day">
-      <option value="">선택하세요</option>
+  <label>시간 (선택 사항):
+    <select id="hour" disabled>
+      <option value="">시간을 선택하세요</option>
     </select>
-  </label>
-
-  <label>시간 (선택):
-    <select id="hour">
-      <option value="">선택하세요</option>
-      <option value="00">00시</option>
-      <option value="01">01시</option>
-      <option value="02">02시</option>
-      <option value="03">03시</option>
-      <option value="04">04시</option>
-      <option value="05">05시</option>
-      <option value="06">06시</option>
-      <option value="07">07시</option>
-      <option value="08">08시</option>
-      <option value="09">09시</option>
-      <option value="10">10시</option>
-      <option value="11">11시</option>
-      <option value="12">12시</option>
-      <option value="13">13시</option>
-      <option value="14">14시</option>
-      <option value="15">15시</option>
-      <option value="16">16시</option>
-      <option value="17">17시</option>
-      <option value="18">18시</option>
-      <option value="19">19시</option>
-      <option value="20">20시</option>
-      <option value="21">21시</option>
-      <option value="22">22시</option>
-      <option value="23">23시</option>
-    </select>
+    <span class="hint">일자를 선택하시면 시간을 선택할 수 있습니다.</span>
   </label>
 
   <label>측정소명:
     <select id="stationName">
-      <option value="">선택하세요</option>
+      <option value="">측정소를 선택하세요</option>
       <option value="강남구">강남구</option>
       <option value="강동구">강동구</option>
       <option value="강북구">강북구</option>
@@ -129,221 +105,345 @@
     </select>
   </label>
 
-  <button onclick="makeRequest()">API 요청하기</button>
-  <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">엑셀 파일로 다운로드</button>
+  <button onclick="makeRequest()">정보 조회하기</button>
+  <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">조회 결과 엑셀로 다운로드</button>
   <div id="progress"></div>
   <div id="missingDates"></div>
   <div id="errorLog" style="margin-top: 10px; color: #d32f2f;"></div>
 </div>
 
-<pre id="result">결과가 여기에 표시됩니다.</pre>
+<div id="result">여기에 조회된 대기질 정보가 표시됩니다.</div>
 
 <script>
-const API_KEY = '656e516e516475673130344a47507267';
-const API_NAME = 'DailyAverageAirQuality';
+const API_KEY = '656e516e516475673130344a47507267'; // 실제 API 키로 교체
+const API_NAME = 'TimeAverageAirQuality'; // 시간 단위 API
+const DATE_FIELD = 'MSRDT'; // 시간 단위 API의 날짜/시간 필드 (API 문서 확인 필요)
 let allData = [];
 let requestedDates = new Set();
 
-function updateDays() {
-  const year = document.getElementById('year').value;
-  const month = document.getElementById('month').value;
-  const daySelect = document.getElementById('day');
-  daySelect.innerHTML = '<option value="">선택하세요</option>';
+// 년도 선택박스 초기화
+function initYearOptions() {
+  const yearSelect = document.getElementById('year');
+  const currentYear = new Date().getFullYear();
+  for (let y = 1987; y <= currentYear; y++) { // 1987년부터 시작하도록 복원
+    const option = document.createElement('option');
+    option.value = String(y);
+    option.textContent = `${y}년`;
+    yearSelect.appendChild(option);
+  }
+}
 
-  if (year && month) {
-    const daysInMonth = new Date(year, month, 0).getDate();
+// 년도 또는 월/분기 선택 시 일자 드롭다운 업데이트
+function handleYearMonthChange() {
+  const year = document.getElementById('year').value;
+  const monthQuarter = document.getElementById('monthQuarter').value;
+  const daySelect = document.getElementById('day');
+  const hourSelect = document.getElementById('hour');
+
+  daySelect.innerHTML = '<option value="">일자를 선택하세요</option>';
+  daySelect.disabled = true;
+  hourSelect.innerHTML = '<option value="">시간을 선택하세요</option>';
+  hourSelect.disabled = true;
+
+  if (!year || !monthQuarter) return;
+
+  const isMonth = monthQuarter.length === 2 && !isNaN(parseInt(monthQuarter));
+  const isQuarter = monthQuarter.startsWith('Q');
+
+  if (isMonth) {
+    daySelect.disabled = false;
+    const daysInMonth = new Date(year, parseInt(monthQuarter), 0).getDate();
     for (let d = 1; d <= daysInMonth; d++) {
-      const formattedDay = String(d).padStart(2, '0');
-      const option = document.createElement('option');
-      option.value = formattedDay;
-      option.textContent = `${d}일`;
-      daySelect.appendChild(option);
+      const opt = document.createElement('option');
+      opt.value = String(d).padStart(2, '0');
+      opt.textContent = `${d}일`;
+      daySelect.appendChild(opt);
     }
   }
 }
 
+// 일자 선택 시 시간 드롭다운 업데이트
+function handleDayChange() {
+  const day = document.getElementById('day').value;
+  const hourSelect = document.getElementById('hour');
+
+  hourSelect.innerHTML = '<option value="">시간을 선택하세요</option>';
+  if (day) {
+    hourSelect.disabled = false;
+    for (let h = 0; h < 24; h++) {
+      const opt = document.createElement('option');
+      opt.value = String(h).padStart(2, '0');
+      opt.textContent = `${h}시`;
+      hourSelect.appendChild(opt);
+    }
+  } else {
+    hourSelect.disabled = true;
+  }
+}
+
+// 시간 형식 변환 함수
+function formatDateTime(dateStr) {
+  if (dateStr && dateStr.length >= 10) {
+    const year = dateStr.slice(0, 4);
+    const month = dateStr.slice(4, 6);
+    const day = dateStr.slice(6, 8);
+    const hour = dateStr.slice(8, 10);
+    return `${year}-${month}-${day} ${hour}:00`;
+  }
+  return dateStr;
+}
+
+// API 요청 함수
 async function makeRequest() {
   const year = document.getElementById('year').value;
-  const month = document.getElementById('month').value;
-  const quarter = document.getElementById('quarter').value;
+  const monthQuarter = document.getElementById('monthQuarter').value;
   const day = document.getElementById('day').value;
   const hour = document.getElementById('hour').value;
   const stationName = document.getElementById('stationName').value;
 
-  if (!year && !month && !quarter && !day && !hour) {
-    alert('최소한 하나의 조건(년도, 월, 분기, 일자, 시간)을 선택해 주세요.');
+  if (!year) {
+    alert('년도를 반드시 선택해야 합니다.');
+    return;
+  }
+  if (!monthQuarter) {
+    alert('월 또는 분기를 반드시 선택해야 합니다.');
     return;
   }
 
-  document.getElementById('result').textContent = '로딩 중...';
+  document.getElementById('result').innerHTML = '정보를 불러오는 중...';
   document.getElementById('progress').textContent = '0%';
   document.getElementById('missingDates').textContent = '';
   document.getElementById('errorLog').textContent = '';
+  document.getElementById('downloadBtn').style.display = 'none';
+
   allData = [];
   requestedDates.clear();
+
+  const isMonth = monthQuarter.length === 2 && !isNaN(parseInt(monthQuarter));
+  const isQuarter = monthQuarter.startsWith('Q');
 
   try {
     let totalRequests = 0;
     let currentRequest = 0;
 
-    if (year && !month && !quarter && !day && !hour) {
-      // 년도 전체
-      totalRequests = 365; // 윤년 제외 추정
-      for (let m = 1; m <= 12; m++) {
-        const formattedMonth = String(m).padStart(2, '0');
-        const daysInMonth = new Date(year, m, 0).getDate();
+    if (isMonth) {
+      if (day) {
+        if (hour) {
+          totalRequests = 1;
+          const dateStr = `${year}${monthQuarter}${day}${hour}`;
+          await fetchDataForDateTime(dateStr, stationName, totalRequests, currentRequest);
+          currentRequest++;
+        } else {
+          totalRequests = 24;
+          for (let h = 0; h < 24; h++) {
+            const formattedHour = String(h).padStart(2, '0');
+            const dateStr = `${year}${monthQuarter}${day}${formattedHour}`;
+            await fetchDataForDateTime(dateStr, stationName, totalRequests, currentRequest);
+            currentRequest++;
+            await delay(200);
+          }
+        }
+      } else {
+        const daysInMonth = new Date(year, parseInt(monthQuarter), 0).getDate();
+        totalRequests = daysInMonth * 24;
+        document.getElementById('progress').textContent = `대량 데이터 조회 중 (총 ${totalRequests}건)...`;
         for (let d = 1; d <= daysInMonth; d++) {
           const formattedDay = String(d).padStart(2, '0');
-          const dateStr = `${year}${formattedMonth}${formattedDay}`;
-          await fetchDataForDate(dateStr, stationName, totalRequests, currentRequest);
-          currentRequest++;
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 대기
+          for (let h = 0; h < 24; h++) {
+            const formattedHour = String(h).padStart(2, '0');
+            const dateStr = `${year}${monthQuarter}${formattedDay}${formattedHour}`;
+            await fetchDataForDateTime(dateStr, stationName, totalRequests, currentRequest);
+            currentRequest++;
+            await delay(200);
+          }
         }
       }
-    } else if (month && !quarter && !day && !hour) {
-      // 월 전체
-      totalRequests = new Date(year, month, 0).getDate();
-      for (let d = 1; d <= totalRequests; d++) {
-        const formattedDay = String(d).padStart(2, '0');
-        const dateStr = `${year}${month}${formattedDay}`;
-        await fetchDataForDate(dateStr, stationName, totalRequests, currentRequest);
-        currentRequest++;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 대기
-      }
-    } else if (quarter && !day && !hour) {
-      // 분기
+    } else if (isQuarter) {
       const quarterMap = { Q1: [1, 3], Q2: [4, 6], Q3: [7, 9], Q4: [10, 12] };
-      const [startMonth, endMonth] = quarterMap[quarter];
-      totalRequests = [1, 2, 3].reduce((sum, m) => sum + new Date(year, startMonth + m - 1, 0).getDate(), 0);
+      const [startMonth, endMonth] = quarterMap[monthQuarter];
+
+      totalRequests = 0;
+      for (let m = startMonth; m <= endMonth; m++) {
+        totalRequests += new Date(year, m, 0).getDate() * 24;
+      }
+      document.getElementById('progress').textContent = `대량 데이터 조회 중 (총 ${totalRequests}건)...`;
+
       for (let m = startMonth; m <= endMonth; m++) {
         const formattedMonth = String(m).padStart(2, '0');
         const daysInMonth = new Date(year, m, 0).getDate();
         for (let d = 1; d <= daysInMonth; d++) {
           const formattedDay = String(d).padStart(2, '0');
-          const dateStr = `${year}${formattedMonth}${formattedDay}`;
-          await fetchDataForDate(dateStr, stationName, totalRequests, currentRequest);
-          currentRequest++;
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 대기
+          for (let h = 0; h < 24; h++) {
+            const formattedHour = String(h).padStart(2, '0');
+            const dateStr = `${year}${formattedMonth}${formattedDay}${formattedHour}`;
+            await fetchDataForDateTime(dateStr, stationName, totalRequests, currentRequest);
+            currentRequest++;
+            await delay(200);
+          }
         }
       }
-    } else if (day && !hour) {
-      // 일자
-      totalRequests = 1;
-      const dateStr = `${year}${month}${day}`;
-      await fetchDataForDate(dateStr, stationName, totalRequests, currentRequest);
-      currentRequest++;
-    } else if (day && hour) {
-      // 일자 + 시간
-      totalRequests = 1;
-      const dateTime = `${year}${month}${day}${hour}`;
-      await fetchDataForDate(dateTime, stationName, totalRequests, currentRequest);
-      currentRequest++;
     }
 
-    if (allData.length === 0) {
-      document.getElementById('missingDates').textContent = `누락된 일자: ${Array.from(requestedDates).join(', ')}`;
+    if (allData.length === 0 && requestedDates.size > 0) {
+      const missing = Array.from(requestedDates).filter(date => {
+        return !allData.some(item => item[DATE_FIELD] === date);
+      });
+      if (missing.length > 0) {
+        document.getElementById('missingDates').textContent = `선택하신 기간 중 다음 날짜/시간의 정보는 찾을 수 없습니다: ${missing.map(formatDateTime).join(', ')}`;
+      }
+      document.getElementById('result').innerHTML = '선택하신 조건에 해당하는 대기질 정보가 없습니다.';
+    } else if (allData.length === 0) {
+      document.getElementById('result').innerHTML = '조회할 대기질 정보가 없습니다. 조건을 확인해 주세요.';
     } else {
-      document.getElementById('result').textContent = JSON.stringify({ DailyAverageAirQuality: { row: allData } }, null, 2);
+      allData.sort((a, b) => a[DATE_FIELD].localeCompare(b[DATE_FIELD]));
+      displayDataAsTable(allData);
+      document.getElementById('downloadBtn').style.display = 'block';
     }
-    document.getElementById('progress').textContent = '100%';
-    document.getElementById('downloadBtn').style.display = 'block';
-  } catch (e) {
-    document.getElementById('result').textContent = '요청 실패...';
-    document.getElementById('errorLog').textContent = `에러: ${e.message}`;
+
+    document.getElementById('progress').textContent = '완료!';
+  } catch (error) {
+    console.error('정보 조회 중 오류 발생:', error);
+    document.getElementById('errorLog').textContent = `정보를 불러오는 중 오류가 발생했습니다: ${error.message}. 다시 시도해 주세요.`;
+    document.getElementById('result').innerHTML = '정보 조회 중 오류 발생.';
     document.getElementById('progress').textContent = '';
   }
 }
 
-async function fetchDataForDate(date, stationName, totalRequests, currentRequest) {
-  const batchSize = 1000;
-  let startIndex = 1;
-  let retryCount = 0;
-  const maxRetries = 3;
+// 단일 날짜/시간에 대한 API 데이터 가져오기
+async function fetchDataForDateTime(dateStr, stationName, totalRequests, currentRequest) {
+  const startIndex = 1;
+  const endIndex = 1000;
 
-  while (true) {
-    let url = `http://openAPI.seoul.go.kr:8088/${API_KEY}/json/${API_NAME}/${startIndex}/${startIndex + batchSize - 1}/${date}`;
-    if (stationName) {
-      url += `/${encodeURIComponent(stationName)}`;
-    }
-
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        if (response.status === 429 && retryCount < maxRetries) {
-          retryCount++;
-          const waitTime = Math.pow(2, retryCount) * 1000; // 지수 백오프 (2초, 4초, 8초)
-          console.log(`429 오류 발생, ${waitTime/1000}초 후 재시도 (${retryCount}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          continue;
-        }
-        throw new Error(`HTTP 에러: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('API Response for date', date, ':', data);
-      const rows = data.DailyAverageAirQuality?.row || [];
-      if (!rows) {
-        console.warn(`No data for ${date}`);
-        break;
-      }
-
-      rows.forEach(row => {
-        if (row.MSRDT_DE && row.MSRSTE_NM) {
-          row.측정시간 = row.MSRDT_DE;
-          row.서울시구 = row.MSRSTE_NM;
-          allData.push(row);
-        } else {
-          console.warn(`Invalid row data for ${date}:`, row);
-        }
-      });
-
-      const totalCount = data.DailyAverageAirQuality.list_total_count || 0;
-      if (startIndex + batchSize - 1 >= totalCount) break;
-      startIndex += batchSize;
-    } catch (e) {
-      if (e.message.includes('429') && retryCount >= maxRetries) {
-        console.warn(`최대 재시도 초과 (${date})`);
-        break;
-      }
-      throw e;
-    }
+  let apiUrl = `http://openapi.seoul.go.kr:8088/${API_KEY}/json/${API_NAME}/${startIndex}/${endIndex}/${dateStr}`;
+  if (stationName) {
+      apiUrl += `/${encodeURIComponent(stationName)}`;
   }
 
-  document.getElementById('progress').textContent = `${Math.round((currentRequest + 1) / totalRequests * 100)}%`;
+  console.log(`데이터를 가져오는 중: ${apiUrl}`);
+  requestedDates.add(dateStr);
+
+  const progress = Math.round(((currentRequest + 1) / totalRequests) * 100);
+  document.getElementById('progress').textContent = `진행률: ${progress}% (총 ${totalRequests}건 중 ${currentRequest + 1}건 처리)`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data[API_NAME] && data[API_NAME].row) {
+      data[API_NAME].row.forEach(row => {
+        if (stationName && row.MSRSTE_NM !== stationName) return;
+        const uniqueKey = `${row[DATE_FIELD]}_${row.MSRSTE_NM}`;
+        if (!allData.some(item => `${item[DATE_FIELD]}_${item.MSRSTE_NM}` === uniqueKey)) {
+          allData.push(row);
+        }
+      });
+    } else if (data.RESULT && data.RESULT.CODE !== 'INFO-000') {
+      console.warn(`API 오류 (${dateStr}):`, data.RESULT.MESSAGE);
+      document.getElementById('errorLog').textContent += ` ${formatDateTime(dateStr)}: ${data.RESULT.MESSAGE}\n`;
+    }
+  } catch (error) {
+    console.error(`${dateStr} 정보 가져오기 중 오류 발생:`, error);
+    document.getElementById('errorLog').textContent += ` ${formatDateTime(dateStr)} 정보 요청 실패: ${error.message}\n`;
+  }
 }
 
+// 비동기 작업을 위한 지연 함수
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 엑셀 파일 다운로드 함수
 function downloadExcel() {
   if (allData.length === 0) {
-    alert('먼저 API 요청을 실행해 주세요.');
+    alert('다운로드할 데이터가 없습니다.');
     return;
   }
 
-  let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "측정시간,서울시구,NO2,O3,CO,SO2,PM10,PM25\n";
+  // 기존 allData를 복사하고, MSRSTE_NM 컬럼명만 '서울시구'로 변경
+  const dataForExcel = allData.map(row => {
+    const newRow = { ...row }; // 기존 row의 모든 속성을 복사
+    
+    // MSRSTE_NM이 존재하면 서울시구로 변경
+    if (newRow.hasOwnProperty('MSRSTE_NM')) {
+      newRow['서울시구'] = newRow['MSRSTE_NM'];
+      delete newRow['MSRSTE_NM']; // 기존 MSRSTE_NM 필드는 삭제
+    }
 
-  allData.forEach(row => {
-    const rowData = [
-      row.측정시간 || "",
-      row.서울시구 || "",
-      row.NO2 || "",
-      row.O3 || "",
-      row.CO || "",
-      row.SO2 || "",
-      row.PM10 || "",
-      row.PM25 || ""
-    ];
-    csvContent += rowData.join(",") + "\n";
+    // 날짜 필드도 형식 변환 (선택 사항, 기존 코드에서 유지)
+    if (newRow.hasOwnProperty(DATE_FIELD)) {
+      newRow[DATE_FIELD] = formatDateTime(newRow[DATE_FIELD]);
+    }
+    
+    return newRow;
   });
 
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "air_quality_data.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const ws = XLSX.utils.json_to_sheet(dataForExcel); // 변경된 데이터로 시트 생성
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "AirQualityData");
+  XLSX.writeFile(wb, "Seoul_Hourly_Air_Quality_Data.xlsx");
 }
-</script>
 
+
+// 데이터를 HTML 테이블로 표시
+function displayDataAsTable(data) {
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = '';
+
+  if (data.length === 0) {
+    resultDiv.textContent = '표시할 데이터가 없습니다.';
+    return;
+  }
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const tbody = document.createElement('tbody');
+  table.appendChild(thead);
+  table.appendChild(tbody);
+
+  let allKeys = new Set();
+  data.forEach(item => {
+    Object.keys(item).forEach(key => allKeys.add(key));
+  });
+  const headers = Array.from(allKeys).sort(); // 원본 헤더 순서 유지 대신 알파벳 순으로 정렬
+
+  const headerRow = document.createElement('tr');
+  headers.forEach(headerText => {
+    const th = document.createElement('th');
+    // 테이블 표시에서는 MSRSTE_NM을 '서울시구'로 보여줍니다.
+    if (headerText === DATE_FIELD) {
+      th.textContent = '측정일시';
+    } else if (headerText === 'MSRSTE_NM') {
+      th.textContent = '서울시구';
+    } else {
+      th.textContent = headerText;
+    }
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+
+  data.forEach(rowData => {
+    const row = document.createElement('tr');
+    headers.forEach(headerText => {
+      const td = document.createElement('td');
+      let value = rowData[headerText] !== undefined ? rowData[headerText] : '';
+      if (headerText === DATE_FIELD) {
+        value = formatDateTime(value);
+      }
+      td.textContent = value;
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+
+  resultDiv.appendChild(table);
+}
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', () => {
+  initYearOptions();
+  handleYearMonthChange();
+});
+</script>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 </body>
 </html>
