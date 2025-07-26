@@ -319,7 +319,7 @@ async function fetchDataForDateTime(dateStr, stationName, totalRequests, current
   //     apiUrl += `/${encodeURIComponent(stationName)}`;
   // }
 
-  let apiUrl = `/api/${API_KEY}/json/${API_NAME}/${startIndex}/${endIndex}/${dateStr}`;
+let apiUrl = `/api/${API_KEY}/json/${API_NAME}/${startIndex}/${endIndex}/${dateStr}`;
 if (stationName) {
   apiUrl += `/${encodeURIComponent(stationName)}`;
 }
